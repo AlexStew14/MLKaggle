@@ -5,18 +5,19 @@ from torch import optim
 class BinaryClassification(nn.Module):
     def __init__(self, input_dim, width, depth, device, embed_sizes):        
         super(BinaryClassification, self).__init__()
+        self.width = width
+        self.depth = depth
+        
         self.embed_sizes = embed_sizes
         if embed_sizes is not None:
             self.embeddings = nn.ModuleList([nn.Embedding(cat, size) for cat, size in embed_sizes]).to(device=device)
             input_dim += sum(e.embedding_dim for e in self.embeddings)
             self.embed_dropout = nn.Dropout(.3)
 
-        self.factor = 1
         layers = []
         layers.append(self._input_block(input_dim, width))
         for i in range(depth-1):
             layers.append(self._internal_block(width))
-            width = int(width*self.factor)
 
         layers.append(self._output_block(width))
         
@@ -44,9 +45,9 @@ class BinaryClassification(nn.Module):
 
     def _internal_block(self, width):
         return nn.ModuleList([
-            nn.Linear(width, int(width*self.factor)),            
+            nn.Linear(width, width),            
             nn.LeakyReLU(),
-            nn.BatchNorm1d(int(width*self.factor)),
+            nn.BatchNorm1d(width),
         ])
 
 
@@ -73,8 +74,8 @@ class BinaryClassification(nn.Module):
 
 
 if __name__ == '__main__':
-    input_dim = 3
-    width = 256
+    input_dim = 5
+    width = 64
     depth = 8
     batch_size = 5    
 
@@ -84,6 +85,8 @@ if __name__ == '__main__':
     criterion = nn.MSELoss()
     opt = optim.Adam(model.parameters())
 
+    y = model(sample, None)
+    
     # for i in range(100):
     #     opt.zero_grad()
     #     pred_y = model(sample, None)
