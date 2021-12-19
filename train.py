@@ -1,7 +1,6 @@
 from model import BinaryClassification
 from dataset import IncomeDataset
 import pandas as pd
-import numpy as np
 import torch
 from torch import nn
 from torch import optim
@@ -56,18 +55,18 @@ if __name__ == '__main__':
 
     input_dim = train_dataset.shape[1]
 
-    NUM_EPOCHS = 2000 
-    BATCH_SIZE = 4096
+    NUM_EPOCHS = 500 
+    BATCH_SIZE = 8192
     PRINT_EVERY = 100
-    depth = 3
-    width = 32
+    depth = 6
+    width = 128
+    lr = 1e-3
     
     criterion = nn.BCELoss()
     model = BinaryClassification(input_dim, width, depth, device, embed_sizes)
     sampler = WeightedRandomSampler(train_dataset.get_balanced_weights(), num_samples=BATCH_SIZE, replacement=False)
     loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, sampler=sampler)
-    #opt = optim.Adamax(model.parameters()) #.913
-    opt = optim.AdamW(model.parameters()) #.913
+    opt = optim.AdamW(model.parameters(), lr=lr)
 
     runtime_stats = []
     model.train()
@@ -109,8 +108,6 @@ if __name__ == '__main__':
     best_model.eval()
     test_preds = best_model(torch.from_numpy(test_numerical_df).to(device=device, dtype=dtype), torch.from_numpy(X_embed_test).to(device=device, dtype=torch.int64))
     test_preds = test_preds.detach().cpu().numpy().flatten()
-    # test_preds = torch.sigmoid(test_preds)
-    # test_preds = torch.round(test_preds).to(dtype=torch.int64).detach().cpu().numpy().flatten()
     submission_df = pd.DataFrame(list(zip(range(1,test_preds.shape[0] + 1), test_preds)), columns=['ID', 'Prediction'])
     submission_df.to_csv('submission.csv', index=False)
 
@@ -119,13 +116,13 @@ if __name__ == '__main__':
     plt.plot(runtime_df.epoch, runtime_df.train_loss, label='Train Loss')
     plt.plot(runtime_df.epoch, runtime_df.val_loss, label='Val Loss')    
     plt.legend()
-    plt.show()
+    plt.savefig('Loss_graph')
 
     plt.figure(figsize=(18,14))
     plt.plot(runtime_df.epoch, runtime_df.train_auc, label='Train AUC')
     plt.plot(runtime_df.epoch, runtime_df.val_auc, label='Val AUC')
     plt.legend()
-    plt.show()
+    plt.savefig('AUC_graph')
 
 
 
