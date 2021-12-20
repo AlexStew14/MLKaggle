@@ -18,6 +18,8 @@ def preprocess_data(df):
     df['full_time'] = (df['hours.per.week'] >= 40).astype(int)
     df['edu_work_race'] = (df['education.num'] * df['workclass'].astype('category').cat.codes * df['race']).astype('category').cat.codes ** (1/3)
     df['fnlwgt_squared'] = df['fnlwgt'] ** 2
+    df['educated'] = (df['education.num'] > 8).astype(int)       
+    df['highly_educated'] = (df['education.num'] > 13).astype(int)       
     return df
 
 
